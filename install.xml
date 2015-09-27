@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE project>
+<project name="jsidea-build" default="release">
+	<property name="ROOT" value="${basedir}" />
+	<target name="release" description="Release">
+		<echo message="jsidea : install" />
+		<exec executable="cmd">
+			<arg value="/C npm install" />
+		</exec>
+	</target>
+</project>

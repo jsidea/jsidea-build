@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE project>
+<project name="jsidea-build" default="release">
+	<property name="ROOT" value="${basedir}" />
+	<target name="release" description="Release">
+		<echo message="jsidea : build" />
+		<exec executable='cmd' dir="N:">
+			<arg value='/c node src/jsidea/build/Dependency.js' />
+		</exec>
+	</target>
+</project>
