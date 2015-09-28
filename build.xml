@@ -3,9 +3,8 @@
 <project name="jsidea-build" default="release">
 	<property name="ROOT" value="${basedir}" />
 	<target name="release" description="Release">
-		<echo message="jsidea : build" />
 		<exec executable='cmd' dir="N:">
-			<arg value='/c node src/jsidea/build/Dependency.js' />
+			<arg value='/c node src/jsidea/build/Build.js' />
 		</exec>
 	</target>
 </project>
