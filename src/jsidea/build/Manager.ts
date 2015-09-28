@@ -2,22 +2,23 @@ import fs = require("fs");
 import ts = require("typescript");
 import bp = require('./BaseProcessor');
 import dp = require('./Dependency');
+import glob = require("glob");
 
 export interface IReport {
     qualifiedName: string;
     file: string;
     kind: number;
     imports: string[];
-    usedBy: string[];
 }
 
 export class Manager {
     private _dependency: dp.Dependency = null;
-    private _pathPrefix: string;
+    private _sourcePath: string;
     private _symbols: IReport[];
 
-    public run(sourceFiles: string[], pathPrefix: string): void {
-        this._pathPrefix = pathPrefix;
+    public run(sourcePath: string): void {
+        this._sourcePath = sourcePath;
+        var sourceFiles: string[] = glob.sync(this._sourcePath + '**/**/**.ts');
         this._dependency = new dp.Dependency();
         this._dependency.run(sourceFiles);
 
@@ -29,7 +30,7 @@ export class Manager {
                     exportsAll.push(className.qualifiedName);
             }
         }
-        
+
         var imports = {};
         for (var file in this._dependency.imports) {
             var res: any = [];
@@ -43,21 +44,34 @@ export class Manager {
             for (var r of this._dependency.exports[file]) {
                 symbols.push({
                     qualifiedName: r.qualifiedName,
-                    file: this.finalizeFilePath(r.file),
+                    file: this.relativeToSource(r.file),
                     kind: r.node.kind,
                     imports: imports[file],
-                    usedBy: []
                 });
             }
         }
 
-        for (var symbol of symbols) {
-            symbol.usedBy = this.getUsage(symbols, symbol.qualifiedName);
-        }
         this._symbols = symbols;
     }
 
-    public getTypeScriptRessources(): string[] {
+    public getFiles(): dp.IFile[] {
+        var files: dp.IFile[] = [];
+        for (var file of this._dependency.files)
+         {
+            files.push(<any>{
+                name: this.relativeToSource(file.name),
+                size: file.size,
+                code: fs.readFileSync(file.name).toString()
+            });
+            }
+        return files;
+    }
+
+    public getSymbols(): IReport[] {
+        return this._symbols;
+    }
+
+    public getSource(): string[] {
         var symbols = this.getSymbols();
 
         function getReport(fullName: string): IReport {
@@ -79,7 +93,7 @@ export class Manager {
             return ary;
         }
 
-        //create
+        //create sorted list
         var imps: IReport[] = [];
         for (var symbol of symbols) {
             var l = imps.length;
@@ -87,7 +101,8 @@ export class Manager {
             var added = false;
             for (var i = 0; i < l; ++i) {
                 var impSym = imps[i];
-                if (impSym.usedBy.indexOf(fullName) >= 0) {
+                var usedBy = this.getUsage(symbols, impSym.qualifiedName)
+                if (usedBy.indexOf(fullName) >= 0) {
                     addAt(imps, symbol, i);
                     added = true;
                     break;
@@ -97,6 +112,7 @@ export class Manager {
                 imps.push(symbol);
         }
 
+        //replace *.ts with *.js and unify
         var imports: string[] = [];
         for (var symbol of imps) {
             var name = symbol.file.replace(".ts", ".js");
@@ -130,17 +146,6 @@ export class Manager {
             target.push(symbol);
     }
 
-    public getFiles(): dp.IFile[] {
-        var files: dp.IFile[] = [];
-        for (var file of this._dependency.files)
-            files.push({ name: this.finalizeFilePath(file.name), size: file.size });
-        return files;
-    }
-
-    public getSymbols(): IReport[] {
-        return this._symbols;
-    }
-
     //used directly and indirectly
     private getUsage(symbols: IReport[], fullName: string, target?: string[]): string[] {
         target = target || [];
@@ -155,7 +160,7 @@ export class Manager {
         return target;
     }
 
-    private finalizeFilePath(file: string): string {
-        return file.replace(this._pathPrefix, "");
+    private relativeToSource(file: string): string {
+        return file.replace(this._sourcePath, "");
     }
 }

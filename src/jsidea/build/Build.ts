@@ -1,4 +1,3 @@
-import glob = require("glob");
 import fs = require("fs");
 import ts = require("typescript");
 import bp = require('./BaseProcessor');
@@ -18,18 +17,16 @@ class Build {
         this._projectPath = "../" + this._project + "/";
         this._sourcePath = this._projectPath + "src/";
         this._manager = new ma.Manager();
-        this._manager.run(
-            glob.sync(this._sourcePath + this._project + '/**/**.ts'),
-            this._sourcePath);
+        this._manager.run(this._sourcePath);
     }
 
-    public exportDependency(): void {
-        var dep: any = {};
-        dep.symbols = this._manager.getSymbols();
-        dep.files = this._manager.getFiles();
+    public exportBuild(): void {
+        var build: any = {};
+        build.symbols = this._manager.getSymbols();
+        build.files = this._manager.getFiles();
         fs.writeFileSync(
-            this._projectPath + this._project + ".dependency.json",
-            JSON.stringify(dep, null, 2));
+            "release/" + this._project + "/0.0.1/" + this._project + ".build.json",
+            JSON.stringify(build, null, 2));
     }
 
     public exportSource(): void {
@@ -43,7 +40,7 @@ class Build {
             source.libs = [];
         if (!source.php)
             source.php = [];
-        source.src = this._manager.getTypeScriptRessources();
+        source.src = this._manager.getSource();
 
         fs.writeFileSync(sourceFile,
             JSON.stringify(source, null, 2));
@@ -51,7 +48,7 @@ class Build {
 }
 
 var task = new Build("jsidea");
-task.exportDependency();
+task.exportBuild();
 task.exportSource();
 
 //var jsFiles = glob.sync(pathPrefix + project + '/**/**.js');
