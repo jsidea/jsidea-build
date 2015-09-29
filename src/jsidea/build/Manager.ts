@@ -5,7 +5,7 @@ import dp = require('./Dependency');
 import glob = require("glob");
 
 export interface IReport {
-    qualifiedName: string;
+    fullName: string;
     file: string;
     kind: number;
     imports: string[];
@@ -26,8 +26,8 @@ export class Manager {
         var exportsAll: string[] = [];
         for (var file in this._dependency.exports) {
             for (var className of this._dependency.exports[file]) {
-                if (exportsAll.indexOf(className.qualifiedName) < 0)
-                    exportsAll.push(className.qualifiedName);
+                if (exportsAll.indexOf(className.fullName) < 0)
+                    exportsAll.push(className.fullName);
             }
         }
 
@@ -35,7 +35,7 @@ export class Manager {
         for (var file in this._dependency.imports) {
             var res: any = [];
             for (var r of this._dependency.imports[file])
-                res.push(r.qualifiedName);
+                res.push(r.fullName);
             imports[file] = res;
         }
 
@@ -43,7 +43,7 @@ export class Manager {
         for (var file in this._dependency.exports) {
             for (var r of this._dependency.exports[file]) {
                 symbols.push({
-                    qualifiedName: r.qualifiedName,
+                    fullName: r.fullName,
                     file: this.relativeToSource(r.file),
                     kind: r.node.kind,
                     imports: imports[file],
@@ -54,16 +54,18 @@ export class Manager {
         this._symbols = symbols;
     }
 
-    public getFiles(): dp.IFile[] {
+    public getFiles(baseURL: string): dp.IFile[] {
         var files: dp.IFile[] = [];
-        for (var file of this._dependency.files)
-         {
-            files.push(<any>{
-                name: this.relativeToSource(file.name),
+        for (var file of this._dependency.files) {
+            var name = this.relativeToSource(file.name);
+            files.push({
+                name: name,
                 size: file.size,
-                code: fs.readFileSync(file.name).toString()
+//                url: baseURL + name
+                //                extension: name.substr(name.lastIndexOf(".") + 1)
+                //                code: fs.readFileSync(file.name).toString()
             });
-            }
+        }
         return files;
     }
 
@@ -76,7 +78,7 @@ export class Manager {
 
         function getReport(fullName: string): IReport {
             for (var symbol of symbols)
-                if (symbol.qualifiedName == fullName)
+                if (symbol.fullName == fullName)
                     return symbol;
             return null;
         }
@@ -97,11 +99,11 @@ export class Manager {
         var imps: IReport[] = [];
         for (var symbol of symbols) {
             var l = imps.length;
-            var fullName = symbol.qualifiedName;
+            var fullName = symbol.fullName;
             var added = false;
             for (var i = 0; i < l; ++i) {
                 var impSym = imps[i];
-                var usedBy = this.getUsage(symbols, impSym.qualifiedName)
+                var usedBy = this.getUsage(symbols, impSym.fullName)
                 if (usedBy.indexOf(fullName) >= 0) {
                     addAt(imps, symbol, i);
                     added = true;
@@ -125,7 +127,7 @@ export class Manager {
 
     private getReport(symbols: IReport[], fullName: string): IReport {
         for (var symbol of symbols)
-            if (symbol.qualifiedName == fullName)
+            if (symbol.fullName == fullName)
                 return symbol;
         return null;
     }
@@ -135,7 +137,7 @@ export class Manager {
             return;
 
         for (var fullName of symbol.imports) {
-            if (fullName == symbol.qualifiedName)
+            if (fullName == symbol.fullName)
                 continue;
             var rep = this.getReport(symbols, fullName);
             if (rep && target.indexOf(rep) < 0)
@@ -150,17 +152,18 @@ export class Manager {
     private getUsage(symbols: IReport[], fullName: string, target?: string[]): string[] {
         target = target || [];
         for (var sym of symbols) {
-            if (sym.qualifiedName != fullName)
+            if (sym.fullName != fullName)
                 if (sym.imports.indexOf(fullName) >= 0)
-                    if (target.indexOf(sym.qualifiedName) < 0) {
-                        target.push(sym.qualifiedName);
-                        this.getUsage(symbols, sym.qualifiedName, target);
+                    if (target.indexOf(sym.fullName) < 0) {
+                        target.push(sym.fullName);
+                        this.getUsage(symbols, sym.fullName, target);
                     }
         }
         return target;
     }
 
     private relativeToSource(file: string): string {
-        return file.replace(this._sourcePath, "");
+//        return file.replace(this._sourcePath, "");
+        return file.replace("../jsidea/", "");
     }
 }

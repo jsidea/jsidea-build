@@ -5,10 +5,11 @@ import bp = require('./BaseProcessor');
 export interface IFile {
     name: string;
     size: number;
+//    url: string;
 }
 
 export interface IReference {
-    qualifiedName: string;
+    fullName: string;
     node: ts.Node;
     file: string;
     kind: number;
@@ -35,19 +36,19 @@ export class Dependency extends bp.BaseProcessor {
     protected processFile(file: ts.SourceFile): void {
         var stats = fs.statSync(file.fileName.replace(".ts", ".js"));
         var size = stats["size"];
-        this.files.push({ name: file.fileName, size: size });
+        this.files.push({ name: file.fileName, size: size});
     }
 
     protected processNode(node: ts.Node): void {
         this.processExport(node);
     }
-    
-    protected finalize():void{
+
+    protected finalize(): void {
         this._stack.splice(0, this._stack.length);
         this._program.getSourceFiles().forEach(file => {
             this._file = file;
             this.processImports(file);
-        });    
+        });
     }
 
     private processExport(node: ts.Node): void {
@@ -123,26 +124,23 @@ export class Dependency extends bp.BaseProcessor {
     }
 
     private addImport(fullName: string, node: ts.Node): void {
-        if (this.isExported(fullName)) {
-            //            console.log("ADD IMPORT", fullName);
+        if (this.isExported(fullName))
             this.addToResult(this.imports, fullName, node);
-        }
     }
 
-    private isExported(qualifiedName: string): boolean {
-        return this.exportNames.indexOf(qualifiedName) >= 0;
+    private isExported(fullName: string): boolean {
+        return this.exportNames.indexOf(fullName) >= 0;
 
         for (var file in this.exports) {
             var refs = this.exports[file];
             for (var ref of refs)
-                if (ref.qualifiedName == qualifiedName)
+                if (ref.fullName == fullName)
                     return true;
         }
         return false;
     }
 
     private extractExport(node: ts.Node) {
-
         var isNodeExported = false;
         if (this._stack.length > 0) {
             var name = this.getName(node);
@@ -150,29 +148,29 @@ export class Dependency extends bp.BaseProcessor {
             isNodeExported = lastModule.symbol ? lastModule.symbol.exports.hasOwnProperty(name) : false;
         }
         if (isNodeExported) {
-            var fullName = this.getQualifiedName(node);
+            var fullName = this.getFullName(node);
             this.addToResult(this.exports, fullName, node);
             if (this.exportNames.indexOf(fullName) < 0)
                 this.exportNames.push(fullName);
         }
     }
 
-    protected addToResult(target: any, qualifiedName: string, node: ts.Node): void {
-        if (!qualifiedName)
+    protected addToResult(target: any, fullName: string, node: ts.Node): void {
+        if (!fullName)
             return;
         var fileName: string = String(this._file.fileName);
         if (!target.hasOwnProperty(fileName)) {
             target[fileName] = [];
         }
-        if (this.getIndexOfQualifiedName(qualifiedName, target[fileName]) === -1) {
-            target[fileName].push({ qualifiedName: qualifiedName, node: node, file: this._file.fileName });
+        if (this.getIndexOfFullName(fullName, target[fileName]) === -1) {
+            target[fileName].push(<IReference>{ fullName: fullName, node: node, file: this._file.fileName });
         }
     }
 
-    private getIndexOfQualifiedName(qualifiedName: string, refs: IReference[]): number {
+    private getIndexOfFullName(fullName: string, refs: IReference[]): number {
         var l = refs.length;
         for (var i = 0; i < l; ++i)
-            if (refs[i].qualifiedName == qualifiedName)
+            if (refs[i].fullName == fullName)
                 return i;
         return -1;
     }

@@ -19,31 +19,13 @@ export abstract class BaseProcessor {
     }
 
     protected processFile(node: ts.SourceFile): void { }
-
     protected abstract processNode(node: ts.Node): void;
 
-    protected getQualifiedName(node: ts.Node): string {
+    protected getFullName(node: ts.Node): string {
         var symbol: ts.Symbol = this.getSymbol(node);
         if (!symbol)
             return "";
         return this._program.getTypeChecker().getFullyQualifiedName(symbol);
-    }
-
-    private getTypeFullName(node: ts.TypeReferenceNode): string {
-        var parts = <string[]>[];
-        var tname = <ts.QualifiedName>node.typeName;
-
-
-        while (tname) {
-            if ((<ts.Identifier><any>tname).text) {
-                parts.unshift((<ts.Identifier><any>tname).text);
-            } else if (tname.right) {
-                parts.unshift(tname.right.text);
-            }
-
-            tname = <ts.QualifiedName>tname.left;
-        }
-        return parts.join('.');
     }
 
     protected getName(node: ts.Node): string {
@@ -52,7 +34,7 @@ export abstract class BaseProcessor {
     }
 
     protected getPath(node: ts.Node): string[] {
-        var qname = this.getQualifiedName(node);
+        var qname = this.getFullName(node);
         if (qname)
             return qname.split(".");
         return null;
