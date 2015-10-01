@@ -54,16 +54,17 @@ export class Manager {
         this._symbols = symbols;
     }
 
-    public getFiles(baseURL: string): dp.IFile[] {
+    public getFiles(): dp.IFile[] {
         var files: dp.IFile[] = [];
         for (var file of this._dependency.files) {
             var name = this.relativeToSource(file.name);
             files.push({
                 name: name,
                 size: file.size,
-//                url: baseURL + name
+                sizeMinified: file.sizeMinified,
+                //                url: baseURL + name
                 //                extension: name.substr(name.lastIndexOf(".") + 1)
-                //                code: fs.readFileSync(file.name).toString()
+                code: fs.readFileSync(file.name.replace(".ts", ".js")).toString()
             });
         }
         return files;
@@ -163,7 +164,7 @@ export class Manager {
     }
 
     private relativeToSource(file: string): string {
-//        return file.replace(this._sourcePath, "");
+        //        return file.replace(this._sourcePath, "");
         return file.replace("../jsidea/", "");
     }
 }

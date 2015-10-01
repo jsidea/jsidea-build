@@ -1,11 +1,14 @@
 import ts = require("typescript");
 import fs = require("fs");
 import bp = require('./BaseProcessor');
+import UglifyJS = require("uglify-js");
 
 export interface IFile {
     name: string;
     size: number;
-//    url: string;
+    code: string;
+    sizeMinified: number;
+    //    url: string;
 }
 
 export interface IReference {
@@ -36,7 +39,23 @@ export class Dependency extends bp.BaseProcessor {
     protected processFile(file: ts.SourceFile): void {
         var stats = fs.statSync(file.fileName.replace(".ts", ".js"));
         var size = stats["size"];
-        this.files.push({ name: file.fileName, size: size});
+        var minJS = UglifyJS.minify(file.fileName.replace(".ts", ".js"));
+        this.files.push({ name: file.fileName, size: size, code: "", sizeMinified: this.byteLengthUTF8(minJS.code) });
+    }
+
+    protected byteLengthUTF8(str: string): number {
+        // returns the byte length of an utf8 string
+        var s = str.length;
+        for (var i = str.length - 1; i >= 0; i--) {
+            var code = str.charCodeAt(i);
+            if (code > 0x7f && code <= 0x7ff)
+                s++;
+            else if (code > 0x7ff && code <= 0xffff)
+                s += 2;
+            if (code >= 0xDC00 && code <= 0xDFFF)
+                i--; //trail surrogate
+        }
+        return s;
     }
 
     protected processNode(node: ts.Node): void {

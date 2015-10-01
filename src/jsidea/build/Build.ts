@@ -1,4 +1,5 @@
 import fs = require("fs");
+import glob = require("glob");
 import ts = require("typescript");
 import bp = require('./BaseProcessor');
 import dp = require('./Dependency');
@@ -39,7 +40,7 @@ class Build {
                 url: perm.getBaseURL(key)
             };
             build.typescript = this._manager.getSymbols();
-            build.files = this._manager.getFiles(perm.getBaseURL(key));
+            build.files = this._manager.getFiles();
 
             fs.writeFileSync(
                 "../jsidea-website/build/" + this._project + "/0.0.1/" + this._project + ".build.json",
@@ -73,13 +74,17 @@ class Build {
             sourceFile,
             JSON.stringify(source, null, 2));
     }
+
+    public minify(): void {
+        var jsFiles = glob.sync(this._sourcePath + this._project + '/**/**.js');
+        var minJS = UglifyJS.minify(jsFiles);
+        console.log(this._project + "minfied JavaScript");
+    }
 }
 
 var task = new Build("jsidea");
 task.exportBuild();
-//task.exportSource();
-//var perm = new pl.Permalink();
-//perm.loadMasterKey("README.md", (key: string) => { console.log("KEY", key) });
+task.exportSource();
 
 //var jsFiles = glob.sync(pathPrefix + project + '/**/**.js');
 //var minJS = UglifyJS.minify(jsFiles);
