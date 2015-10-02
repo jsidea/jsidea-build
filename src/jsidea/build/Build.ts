@@ -1,13 +1,18 @@
+//externals
 import fs = require("fs");
 import glob = require("glob");
 import ts = require("typescript");
+import UglifyJS = require("uglify-js");
+import UglifyCSS = require("uglifycss");
+import https = require('https');
+import TypeDoc = require("typedoc");
+(<any>TypeDoc).td = TypeDoc;
+
+//internals
 import bp = require('./BaseProcessor');
 import dp = require('./Dependency');
 import ma = require('./Manager');
 import pl = require('./Permalink');
-import UglifyJS = require("uglify-js");
-import UglifyCSS = require("uglifycss");
-import https = require('https');
 
 interface ISource {
     css: string[];
@@ -52,7 +57,7 @@ class Build {
 
     }
 
-    public getSource(): ISource {
+    private getSource(): ISource {
         var sourceFile = this._projectPath + this._project + ".source.json";
         var str = fs.readFileSync(sourceFile);
 
@@ -80,11 +85,25 @@ class Build {
         var minJS = UglifyJS.minify(jsFiles);
         console.log(this._project + "minfied JavaScript");
     }
+
+    public exportDocs(): void {
+        var opt: any = {
+            theme: "",
+            target: "ES5",
+            mode: "file"
+        };
+        var app = new TypeDoc.td.Application(opt);
+        var sourceFiles: string[] = glob.sync(this._sourcePath + "**/**.ts");
+        app.generateDocs(sourceFiles, "bin");
+        console.log("DOCS GENERATED");
+    }
 }
 
 var task = new Build("jsidea");
-task.exportBuild();
-task.exportSource();
+//task.exportBuild();
+//task.exportSource();
+task.exportDocs();
+
 
 //var jsFiles = glob.sync(pathPrefix + project + '/**/**.js');
 //var minJS = UglifyJS.minify(jsFiles);
