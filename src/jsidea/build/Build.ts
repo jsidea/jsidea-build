@@ -100,9 +100,9 @@ class Build {
 }
 
 var task = new Build("jsidea");
-//task.exportBuild();
-//task.exportSource();
-task.exportDocs();
+task.exportBuild();
+task.exportSource();
+//task.exportDocs();
 
 
 //var jsFiles = glob.sync(pathPrefix + project + '/**/**.js');
