@@ -36,11 +36,14 @@ export class Dependency extends bp.BaseProcessor {
         this.exportNames = [];
     }
 
-    protected processFile(file: ts.SourceFile): void {
+    protected processFile(file: ts.SourceFile): boolean {
+        if(file.fileName.indexOf(".d.ts") >= 0)
+            return false;
         var stats = fs.statSync(file.fileName.replace(".ts", ".js"));
         var size = stats["size"];
         var minJS = UglifyJS.minify(file.fileName.replace(".ts", ".js"));
         this.files.push({ name: file.fileName, size: size, code: "", sizeMinified: this.byteLengthUTF8(minJS.code) });
+        return true;
     }
 
     protected byteLengthUTF8(str: string): number {

@@ -64,7 +64,8 @@ export class Manager {
                 sizeMinified: file.sizeMinified,
                 //                url: baseURL + name
                 //                extension: name.substr(name.lastIndexOf(".") + 1)
-                code: fs.readFileSync(file.name.replace(".ts", ".js")).toString()
+//                code: fs.readFileSync(file.name.replace(".ts", ".js")).toString()
+                code: fs.readFileSync(file.name).toString()
             });
         }
         return files;

@@ -8,17 +8,19 @@ export abstract class BaseProcessor {
 
     public run(sourceFiles: string[]): void {
         this.prepare(sourceFiles);
-        this._host = ts.createCompilerHost(this._options)
-        this._program = ts.createProgram(sourceFiles, this._options, this._host)
+        this._host = ts.createCompilerHost(this._options);
+        this._program = ts.createProgram(sourceFiles, this._options, this._host);
         this._program.getSourceFiles().forEach(file => {
             this._file = file;
-            this.processFile(file);
-            this.processNode(file);
+            if (this.processFile(file))
+                this.processNode(file);
         });
         this.finalize();
     }
 
-    protected processFile(node: ts.SourceFile): void { }
+    protected processFile(node: ts.SourceFile): boolean {
+        return true;
+    }
     protected abstract processNode(node: ts.Node): void;
 
     protected getFullName(node: ts.Node): string {
