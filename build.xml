@@ -4,6 +4,9 @@
 	<property name="ROOT" value="${basedir}" />
 	<target name="release" description="Release">
 		<exec executable='cmd' dir="N:">
+			<arg value='/c node node_modules/uglify-js --self -c -m -o result.js' />
+		</exec>
+		<exec executable='cmd' dir="N:">
 			<arg value='/c node src/jsidea/build/Build.js' />
 		</exec>
 	</target>
